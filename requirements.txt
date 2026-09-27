@@ -1,0 +1,8 @@
+# ERTInv dependencies (pip).
+# NOTE: pyGIMLi is best installed with conda-forge (see environment.yml);
+# the pip build's compiled core is incomplete on some platforms.
+pygimli>=1.4
+numpy>=1.21
+matplotlib>=3.5
+scipy>=1.7
+jupyter

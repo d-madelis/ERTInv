@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below, and cite pyGIMLi."
+title: "ERTInv: synthetic ERT modelling and inversion with pyGIMLi"
+authors:
+  - family-names: Madelis
+    given-names: Dimitrios
+version: 0.2.0
+date-released: 2026-09-24
+license: MIT
+references:
+  - type: article
+    title: "pyGIMLi: An open-source library for modelling and inversion in geophysics"
+    authors:
+      - family-names: Rücker
+        given-names: Carsten
+      - family-names: Günther
+        given-names: Thomas
+      - family-names: Wagner
+        given-names: Florian M.
+    journal: "Computers & Geosciences"
+    volume: 109
+    year: 2017
+    start: 106
+    end: 123
+    doi: 10.1016/j.cageo.2017.07.011
