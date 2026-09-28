@@ -39,6 +39,33 @@ def resistivity_range(rhomap) -> tuple:
     return float(min(vals)), float(max(vals))
 
 
+def _nice_ticks(cmin: float, cmax: float):
+    """Round 1-2-5 tick values within [cmin, cmax] (endpoints included)."""
+    lo, hi = float(cmin), float(cmax)
+    ticks = []
+    v = 10.0 ** np.floor(np.log10(lo))
+    while v <= hi * 1.0001:
+        for m in (1, 2, 5):
+            t = m * v
+            if lo * 0.999 <= t <= hi * 1.001:
+                ticks.append(t)
+        v *= 10
+    ticks = sorted(set([lo] + ticks + [hi]))
+    return ticks
+
+
+def _round_colorbar(cbar, cmin: float, cmax: float) -> None:
+    """Give a pyGIMLi colour bar rounded, human-friendly tick labels."""
+    if cbar is None:
+        return
+    ticks = _nice_ticks(cmin, cmax)
+    try:
+        cbar.set_ticks(ticks)
+        cbar.set_ticklabels([f"{t:g}" for t in ticks])
+    except Exception:
+        pass
+
+
 def show_pseudosection(data, ax, cmap: str = PSEUDO_CMAP,
                        title: Optional[str] = None):
     """Draw an apparent-resistivity pseudosection into ``ax``.
@@ -379,15 +406,20 @@ def plot_residual_page(datasets, per_noise, method, outpath: Optional[str] = Non
 
 
 # ---------------------------------------------------------------------------
-def plot_true_model_page(forward_mesh, rhomap, outpath: Optional[str] = None):
-    """The true model alone, on its own page."""
+def plot_true_model_page(forward_mesh, rhomap, outpath: Optional[str] = None,
+                         depth: Optional[float] = None):
+    """The true model alone, on its own page (optionally capped at ``depth`` m)."""
     cmin, cmax = resistivity_range(rhomap)
     fig, ax = plt.subplots(figsize=(10, 6))
-    pg.show(forward_mesh, data=rhomap, ax=ax, cMap=RES_CMAP,
-            cMin=cmin, cMax=cmax, showMesh=False, label=pg.unit("res"))
+    _, cbar = pg.show(forward_mesh, data=rhomap, ax=ax, cMap=RES_CMAP,
+                      cMin=cmin, cMax=cmax, showMesh=False,
+                      label=pg.unit("res"), hold=True)
+    _round_colorbar(cbar, cmin, cmax)
     ax.set_title("True model", fontweight="bold")
     ax.set_xlabel("Distance (m)")
     ax.set_ylabel("Depth (m)")
+    if depth:
+        ax.set_ylim(-abs(depth), 0)
     if outpath:
         _ensure_dir(outpath)
         fig.savefig(outpath, dpi=200, bbox_inches="tight")
@@ -420,7 +452,7 @@ def plot_pseudosections_page(datasets, outpath: Optional[str] = None):
 
 # ---------------------------------------------------------------------------
 def plot_results_page(forward_mesh, rhomap, datasets, per_noise, method,
-                      outpath: Optional[str] = None):
+                      outpath: Optional[str] = None, depth: Optional[float] = None):
     """All recovered models for one method on one page (one per noise level)."""
     cmin, cmax = resistivity_range(rhomap)
     n = len(datasets)
@@ -433,8 +465,10 @@ def plot_results_page(forward_mesh, rhomap, datasets, per_noise, method,
         ax = axes[i]
         res = per_noise.get(ds.noise_level, {}).get("inversion")
         if res is not None and getattr(res, "success", False):
-            pg.show(res.para_domain, res.model, ax=ax, cMap=RES_CMAP,
-                    cMin=cmin, cMax=cmax, logScale=True, label=pg.unit("res"))
+            _, cbar = pg.show(res.para_domain, res.model, ax=ax, cMap=RES_CMAP,
+                              cMin=cmin, cMax=cmax, logScale=True,
+                              label=pg.unit("res"), hold=True)
+            _round_colorbar(cbar, cmin, cmax)
             ax.set_title(f"{method.capitalize()} - {ds.noise_level*100:.0f}% noise\n"
                          f"chi2 = {res.chi2:.2f}", fontweight="bold")
         else:
@@ -442,6 +476,8 @@ def plot_results_page(forward_mesh, rhomap, datasets, per_noise, method,
                     transform=ax.transAxes)
         ax.set_xlabel("Distance (m)")
         ax.set_ylabel("Depth (m)")
+        if depth:
+            ax.set_ylim(-abs(depth), 0)
     for j in range(n, len(axes)):
         axes[j].axis("off")
     fig.suptitle(f"{method.capitalize()} inversion - recovered models",

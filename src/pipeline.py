@@ -39,6 +39,7 @@ def _quiet_pygimli() -> None:
     try:
         import pygimli as pg
         pg.setVerbose(False)
+        pg.rc["hold"] = True   # never auto-plt.show() (keeps figures out of the notebook)
     except Exception:
         pass
     for name in ("pyGIMLi", "pygimli", "Core"):
@@ -161,8 +162,10 @@ def run(cfg: Config, report_pdf: Optional[str] = None, save_png: bool = False,
               f" (RMS {res.rms:.2f}){merr_txt}")
         results.per_noise[ds.noise_level] = entry
 
+    depth = getattr(cfg, "plot_depth", None)
+
     # Page 1: true model on its own
-    _page(plotting.plot_true_model_page(forward_mesh, rhomap),
+    _page(plotting.plot_true_model_page(forward_mesh, rhomap, depth=depth),
           _png("true_model.png"))
 
     # Page 2: all pseudosections
@@ -171,7 +174,7 @@ def run(cfg: Config, report_pdf: Optional[str] = None, save_png: bool = False,
 
     # Page 3: all recovered models
     _page(plotting.plot_results_page(forward_mesh, rhomap, datasets,
-                                     results.per_noise, method),
+                                     results.per_noise, method, depth=depth),
           _png(f"{method}_results.png"))
 
     # Page 4: all residual histograms

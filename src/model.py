@@ -58,13 +58,21 @@ def build_geometry(cfg: Config):
     geom = world
     for j, tgt in enumerate(cfg.targets):
         marker = next_marker + j
-        poly = mt.createPolygon(
-            [list(p) for p in tgt.points],
-            isClosed=True,
-            marker=marker,
-            area=tgt.area,
-        )
-        geom = geom + poly
+        if tgt.is_circle:
+            body = mt.createCircle(
+                pos=list(tgt.center),
+                radius=float(tgt.radius),
+                marker=marker,
+                area=tgt.area,
+            )
+        else:
+            body = mt.createPolygon(
+                [list(p) for p in tgt.points],
+                isClosed=True,
+                marker=marker,
+                area=tgt.area,
+            )
+        geom = geom + body
         rhomap.append([marker, float(tgt.resistivity)])
         marker_names[marker] = tgt.name or f"target_{marker}"
 

@@ -48,25 +48,39 @@ class Layer:
 
 @dataclass
 class Target:
-    """An irregular buried body (anomaly) defined by a closed polygon.
+    """A buried body (anomaly), either a circle or an arbitrary polygon.
+
+    Give **either** ``center`` + ``radius`` (a circular body) **or**
+    ``points`` (a closed polygon). Circles are the easy way to reproduce the
+    classic "two anomalies in a homogeneous background" test.
 
     Parameters
     ----------
     name :
         Label used in printouts and plots.
-    points :
-        List of ``[x, z]`` vertices (metres). The polygon is closed
-        automatically.
     resistivity :
         Resistivity of the body in Ohm-m.
+    center :
+        ``(x, z)`` centre of a circular body, in metres (z negative, down).
+    radius :
+        Radius of the circular body, in metres.
+    points :
+        List of ``[x, z]`` vertices for a polygonal body (closed
+        automatically). Ignored if ``center`` and ``radius`` are given.
     area :
         Maximum triangle area inside the body (smaller = finer mesh there).
     """
 
     name: str
-    points: Sequence[Sequence[float]]
     resistivity: float
+    center: Sequence[float] | None = None
+    radius: float | None = None
+    points: Sequence[Sequence[float]] | None = None
     area: float = 0.5
+
+    @property
+    def is_circle(self) -> bool:
+        return self.center is not None and self.radius is not None
 
 
 # ---------------------------------------------------------------------------
@@ -200,6 +214,8 @@ class Config:
     outdir: str = "results"
     #: Where the simulated ``.dat`` datasets are written (kept out of ``outdir``).
     datadir: str = "data"
+    #: Maximum depth (m) shown in the true-model / recovered-model figures.
+    plot_depth: float = 15.0
 
     # ---- optional analyses (all cheap except where noted) ----
     do_coverage: bool = True        #: cumulative-sensitivity coverage map
